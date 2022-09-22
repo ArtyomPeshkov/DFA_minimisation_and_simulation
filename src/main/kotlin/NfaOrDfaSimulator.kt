@@ -39,6 +39,9 @@ fun simulator(fileName: String): Boolean{
     return simulatorTM(states, start, finish, string)
 }
 
+// 4 задача с тестом на 3 машинах
+// P.s. забыл, что reviewer указывается в PR, поэтому в PR будет только этот комментарий :(
+
 fun main(args: Array<String>) {
     simulator("src/main/resources/sample.txt")
 }
