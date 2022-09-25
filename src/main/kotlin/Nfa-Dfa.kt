@@ -37,6 +37,8 @@ fun converter(
     finishes.forEach {
         fin = "$fin$it "
     }
+    fin = fin.trim()
+
     return "${groups.size}\n$symbols\n0\n$fin\n${ans}"
 }
 
