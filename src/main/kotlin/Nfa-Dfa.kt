@@ -13,7 +13,7 @@ fun converter(
     val q: Queue<List<Int>> = LinkedList()
     groups.add(start)
     q.add(start)
-    if (start.containsAll(finish) && finish.containsAll(start))
+    if (start.any { finish.contains(it) })
         finishes.add(groups.size - 1)
     while (!q.isEmpty()) {
         val from = q.poll()
