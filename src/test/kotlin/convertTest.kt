@@ -21,7 +21,7 @@ class TestConvert{
                 "3 0 4\n" +
                 "3 1 2\n" +
                 "4 0 4\n" +
-                "4 1 2\n",convertInfo("src/test/resources/convert/sample.txt"))
+                "4 1 2\n", converter(convertInfo("src/test/resources/convert/sample.txt")).toString())
     }
 
     @Test
@@ -45,7 +45,7 @@ class TestConvert{
                 "6 0 4\n" +
                 "6 1 5\n" +
                 "7 0 6\n" +
-                "7 1 7\n",convertInfo("src/test/resources/convert/ab_simple.txt"))
+                "7 1 7\n",converter(convertInfo("src/test/resources/convert/ab_simple.txt")).toString())
     }
 
     @Test
@@ -56,14 +56,13 @@ class TestConvert{
                 .asSequence()
                 .map(source::get)
                 .joinToString(" ")
-            println(str)
             val sourceFile = File("src/test/resources/convert/ab_simple.txt")
             val first = File("src/test/resources/convert/compfirst.txt")
             val second = File("src/test/resources/convert/compsec.txt")
             first.writeText(str + "\n")
             second.writeText(str + "\n")
             first.appendText(sourceFile.readText())
-            second.appendText(convertInfo(sourceFile.path))
+            second.appendText(converter(convertInfo(sourceFile.path)).toString())
             assertEquals(simulator("src/test/resources/convert/compfirst.txt"), simulator("src/test/resources/convert/compsec.txt"))
         }
 
