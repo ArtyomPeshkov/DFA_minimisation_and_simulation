@@ -4,7 +4,7 @@ import java.util.*
 fun converter(
     automaton: Automaton
 ): Automaton {
-    val edges:MutableList<MutableList<MutableList<Int>>> = mutableListOf()
+    val edges: MutableList<MutableList<MutableList<Int>>> = mutableListOf()
     val finishes = mutableListOf<Int>()
     val groups = mutableListOf<List<Int>>()
     val q: Queue<List<Int>> = LinkedList()
@@ -29,7 +29,7 @@ fun converter(
             if (to.isNotEmpty()) {
                 val stateFrom = groups.indexOf(from)
                 if (edges.size <= stateFrom)
-                    edges.addAll(List(stateFrom-edges.size + 1){ MutableList(automaton.alphabetSize){ mutableListOf()} })
+                    edges.addAll(List(stateFrom - edges.size + 1) { MutableList(automaton.alphabetSize) { mutableListOf() } })
                 val symbol = i
                 val stateTo = groups.indexOf(newElem)
                 edges[stateFrom][symbol].add(stateTo)
@@ -37,8 +37,9 @@ fun converter(
             }
         }
     }
-
-    return Automaton(edges.size,automaton.alphabetSize, listOf(0), finishes, edges)
+    while (edges.size < groups.size)
+        edges.add(MutableList(automaton.alphabetSize) { mutableListOf() })
+    return Automaton(groups.size, automaton.alphabetSize, listOf(0), finishes, edges)
 }
 
 class Automaton(
@@ -67,7 +68,7 @@ class Automaton(
         ans.trim()
         ans.append("\n")
         states.forEachIndexed { stateIndex, state ->
-            state.forEachIndexed{ chrIndex, chr ->
+            state.forEachIndexed { chrIndex, chr ->
                 chr.forEach {
                     ans.append("$stateIndex $chrIndex ${it}\n")
                 }
@@ -90,91 +91,93 @@ fun convertInfo(fileName: String): Automaton {
         states[stateInfo[0]][stateInfo[1]].add(stateInfo[2])
     }
 
-    return Automaton(n,m,start,finish,states)
+    return Automaton(n, m, start, finish, states)
 }
 
-fun bfs(nodes:Automaton, u: Int, used: MutableList<Boolean>) {
+fun bfs(nodes: Automaton, u: Int, used: MutableList<Boolean>) {
     val queue = mutableListOf<Int>()
     queue.add(u)
-    while(queue.isNotEmpty()) {
+    used[u] = true
+    while (queue.isNotEmpty()) {
         val current = queue.removeAt(0)
-        used[current] = true
-        nodes.states[current].forEach{
+        nodes.states[current].forEach {
             it.forEach { elem ->
-                queue.add(elem)
+                if (!used[elem]) {
+                    queue.add(elem)
+                    used[elem] = true
+                }
             }
         }
     }
 }
 
-fun minimisation(automaton: Automaton){
+fun minimisation(automaton: Automaton) : Automaton {
     val newAutomaton = converter(automaton)
-    val used = MutableList(newAutomaton.stateNumber) {false}
-    bfs(newAutomaton,0,used)
-    automaton.states = automaton.states.filterIndexed {index,_ -> used[index] }.toMutableList()
-    automaton.finish = automaton.finish.filterIndexed {index,_ -> used[index] }.toMutableList()
-    automaton.start = automaton.start.filterIndexed {index,_ -> used[index] }.toMutableList()
-    automaton.stateNumber = automaton.states.size
+    val used = MutableList(newAutomaton.stateNumber) { false }
+    bfs(newAutomaton, 0, used)
+    newAutomaton.states = newAutomaton.states.filterIndexed { index, _ -> used[index] }.toMutableList()
+    newAutomaton.finish = newAutomaton.finish.filterIndexed { index, _ -> used[index] }.toMutableList()
+    newAutomaton.start = newAutomaton.start.filterIndexed { index, _ -> used[index] }.toMutableList()
+    newAutomaton.stateNumber = newAutomaton.states.size
 
-    var classByElem: MutableList<Int> = MutableList(automaton.stateNumber) {0}
-    automaton.finish.forEach { classByElem[it] = 1 }
+    var classByElem: MutableList<Int> = MutableList(newAutomaton.stateNumber) { 0 }
+    newAutomaton.finish.forEach { classByElem[it] = 1 }
 
-    var elementsByClass: MutableList<MutableList<Int>> = MutableList(2) { mutableListOf()}
-    (0..automaton.stateNumber).forEach{
-        elementsByClass[if (automaton.finish.contains(it)) 1 else 0].add(it)
+    var elementsByClass: MutableList<MutableList<Int>> = MutableList(2) { mutableListOf() }
+    (0 until newAutomaton.stateNumber).forEach {
+        elementsByClass[if (newAutomaton.finish.contains(it)) 1 else 0].add(it)
     }
     var canSplit = true
-    while (canSplit)
-    {
+    while (canSplit) {
         canSplit = false
-        var newClassByElem =  mutableListOf<Int>()
-        val newElementsByClass =  mutableListOf<MutableList<Int>>()
-        elementsByClass.forEach { currentClass ->
-            for (chr in 0 until automaton.alphabetSize)
-            {
-                val classes: MutableSet<Int> = mutableSetOf()
-                currentClass.forEach lbl@ {
-                    if (automaton.states[it][chr].isEmpty()) {
-                        classes.add(-1)
-                        return@lbl
-                    }
-                    classes.add(classByElem[automaton.states[it][chr].first()])
-                }
+        run algo@{
+            elementsByClass.forEach { currentClass ->
+                for (chr in 0 until newAutomaton.alphabetSize) {
 
-                if (classes.size > 1)
-                {
-                    canSplit = true
-                    val newClassesHelper = MutableList(classes.maxOf { it } + 2) {-1}
-                    var index = 0
-                    classes.forEach{
-                        newClassesHelper[it+1] = index++
-                    }
-                    val newSets = MutableList<MutableList<Int>>(classes.size) { mutableListOf()}
-                    currentClass.forEach lbl@ {
-                        if (automaton.states[it][chr].isEmpty()) {
-                            newSets[0].add(it)
+                    var classes: MutableList<MutableList<Int>> =
+                        MutableList(newAutomaton.stateNumber + 1) { mutableListOf() }
+                    currentClass.forEach lbl@{
+                        if (newAutomaton.states[it][chr].isEmpty()) {
+                            classes[0].add(it)
                             return@lbl
                         }
-                        val classIndex = newClassesHelper[classByElem[automaton.states[it][chr].first()]]
-                        newSets[classIndex].add(it)
+                        classes[classByElem[newAutomaton.states[it][chr].first()] + 1].add(it)
                     }
-                    newElementsByClass.addAll(newSets)
-                    newClassByElem = MutableList(newElementsByClass.size) {-1}
-                    newElementsByClass.forEachIndexed { classNumber, list->
-                            list.forEach {
-                                newClassByElem[it] = classNumber
-                            }
-                    }
+                    classes = classes.filter { it.isNotEmpty() }.toMutableList()
 
+                    if (classes.size > 1) {
+                        elementsByClass = elementsByClass.filter { it != currentClass }.toMutableList()
+                        elementsByClass.addAll(classes)
+                        classByElem = MutableList(elementsByClass.maxOf { it.maxOf { it } } + 1) { -1 }
+                        elementsByClass.forEachIndexed { ind, elems ->
+                            elems.forEach {
+                                classByElem[it] = ind
+                            }
+                        }
+                        return@algo;
+
+                    }
                 }
             }
         }
-        elementsByClass = newElementsByClass
-        classByElem = newClassByElem
     }
+    val resultStates: MutableList<MutableList<MutableList<Int>>> = MutableList(elementsByClass.size){ MutableList(newAutomaton.alphabetSize){ mutableListOf()} }
+    elementsByClass.forEachIndexed { index, elements ->
+        for (chr in 0 until newAutomaton.alphabetSize)
+            resultStates[index][chr].add(classByElem[newAutomaton.states[elements[0]][chr][0]])
+    }
+    val start = mutableListOf<Int>()
+    val finish = mutableListOf<Int>()
+    elementsByClass.forEachIndexed { index, state->
+        if (state.any {newAutomaton.start.contains(it)})
+            start.add(index)
+        if (state.any {newAutomaton.finish.contains(it)})
+            finish.add(index)
+    }
+    return Automaton(elementsByClass.size,newAutomaton.alphabetSize, start, finish, resultStates)
 }
 
 fun main(args: Array<String>) {
     val automaton = convertInfo("src/main/resources/convert.txt");
-    println(converter(automaton))
+    println(minimisation(automaton).toString())
 }
