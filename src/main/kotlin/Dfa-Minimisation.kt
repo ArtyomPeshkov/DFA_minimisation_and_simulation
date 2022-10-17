@@ -154,6 +154,7 @@ fun minimisation(automaton: Automaton) : Automaton {
                                 classByElem[it] = ind
                             }
                         }
+                        canSplit = true
                         return@algo;
 
                     }
@@ -164,7 +165,8 @@ fun minimisation(automaton: Automaton) : Automaton {
     val resultStates: MutableList<MutableList<MutableList<Int>>> = MutableList(elementsByClass.size){ MutableList(newAutomaton.alphabetSize){ mutableListOf()} }
     elementsByClass.forEachIndexed { index, elements ->
         for (chr in 0 until newAutomaton.alphabetSize)
-            resultStates[index][chr].add(classByElem[newAutomaton.states[elements[0]][chr][0]])
+            if (newAutomaton.states[elements[0]][chr].isNotEmpty())
+                 resultStates[index][chr].add(classByElem[newAutomaton.states[elements[0]][chr][0]])
     }
     val start = mutableListOf<Int>()
     val finish = mutableListOf<Int>()

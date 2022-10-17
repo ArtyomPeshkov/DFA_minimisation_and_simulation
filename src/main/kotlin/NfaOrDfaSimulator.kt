@@ -1,22 +1,20 @@
 import java.io.File
 import java.util.*
 
-fun simulatorTM(
-    states: MutableList<MutableList<MutableList<Int?>>>,
-    start: List<Int>,
-    finish: List<Int>,
+fun simulatorTM(automaton: Automaton,
+
     string: List<Int>
 ): Boolean {
     val q: Queue<Pair<Int, Int>> = LinkedList()
-    start.forEach {
+    automaton.start.forEach {
         q.add(Pair(0, it))
     }
     while (!q.isEmpty()) {
         val element = q.poll()
-        if (finish.contains(element.second) and (string.size == element.first))
+        if (automaton.finish.contains(element.second) and (string.size == element.first))
             return true
         if (element.first < string.size)
-            states[element.second][string[element.first]].mapNotNull { it }.forEach {
+            automaton.states[element.second][string[element.first]].forEach {
                 q.add(Pair(element.first + 1, it))
             }
 
@@ -31,12 +29,13 @@ fun simulator(fileName: String): Boolean{
     val m: Int = input.nextLine().toInt()
     val start: List<Int> = input.nextLine().split(' ').map { it.toInt() }
     val finish: List<Int> = input.nextLine().split(' ').map { it.toInt() }
-    val states = MutableList(n) { MutableList(m) { mutableListOf<Int?>(null) } }
+    val states = MutableList(n) { MutableList(m) { mutableListOf<Int>() } }
     while (input.hasNextLine()) {
         val stateInfo = input.nextLine().split(' ').map { it.toInt() }
         states[stateInfo[0]][stateInfo[1]].add(stateInfo[2])
     }
-    return simulatorTM(states, start, finish, string)
+    val automaton = Automaton(n,m,start,finish,states)
+    return simulatorTM(automaton,string)
 }
 
 // 4 задача с тестом на 3 машинах
